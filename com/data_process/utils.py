@@ -1,9 +1,10 @@
 import os
 import random
 import sys
-sys.path.append('../')
 import templates
 import json
+import csv
+sys.path.append('../')
 
 def read_line(path):
     print(path)
@@ -135,3 +136,116 @@ def process_pair(current_dic,com_dic):
     data2['output'] = com_dic['explanation']
 
     return data1,data2
+
+def Csv2Json(csv_file,map_file = None):
+    data = {}  # 创建一个空的字典用于存储数据
+    with open(csv_file, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)  # 使用reader读取CSV文件
+        for row in reader:
+            user_id = row[0]  # 假设用户ID在第一列
+            item_id = row[1]  # 假设项目ID在第二列
+            rating = float(row[2])  # 假设评分在第三列，并将其转换成浮点数
+            # 如果用户ID不存在于字典中，则创建一个新的键值对
+            if user_id not in data:
+                data[user_id] = []
+            # 添加评分信息到对应用户的列表中
+            data[user_id].append({'itemID': item_id, 'rating': rating})
+    #转换id对
+    if map_file is not None:
+        id_map_data = {}
+        with open(map_file, 'r', encoding='utf-8') as f:
+            id_mapping = json.load(f)
+        id2user = {v: k for k, v in id_mapping["id2user"].items()}
+        id2item = {v: k for k, v in id_mapping["id2item"].items()}
+        #开始匹配
+        for old_key, value in data.items():
+            if old_key in id2user:
+                new_key = id2user[old_key]
+            else:
+                #new_key = old_key
+                continue
+            new_value = []
+            for item in value:
+                if item["itemID"] in id2item:
+                    item["itemID"] = id2item[item["itemID"]]
+                    new_value.append(item)
+                else:
+                    continue
+            if len(new_value) > 0:
+                id_map_data[new_key] = new_value
+        #更换指针
+        data = id_map_data
+    return data
+
+def Slect_TopN(data:dict,rate = 4.0,exceed = True):
+    filtered_data = {}
+    for user_id, ratings in data.items():
+        if exceed:
+            filtered_ratings = [rating for rating in ratings if rating['rating'] >= rate]
+        else:
+            filtered_ratings = [rating for rating in ratings if rating['rating'] < rate]
+        # 如果筛选后的评分列表不为空，则将其添加到筛选后的数据中
+        if filtered_ratings:
+            filtered_data[user_id] = filtered_ratings
+    return filtered_data
+
+def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
+    data = Csv2Json(data_path,map_path)
+    positive_data = Slect_TopN(data,rate,True)
+    negetive_data = Slect_TopN(data, rate, False)
+    #开始构造
+    struct_positive_temp = []
+    struct_negetive_temp = []
+    tempplate = '''Choose the best item from the candidates to recommend for user_{}? {}'''
+    #构造负样本
+    for user_id, item in negetive_data.items():
+        part_items = []
+        if user_id in positive_data:
+            for i in positive_data[user_id]:
+                part_items.append(i["itemID"])
+        for user_id_item in item:
+            if len(part_items) > 15:
+                random.shuffle(part_items)
+                temp_items = part_items[0:14].copy()
+            else:
+                random.shuffle(part_items)
+                temp_items = part_items.copy()
+            temp_items.append(user_id_item["itemID"])
+            if len(temp_items) > 0:
+                random.shuffle(temp_items)
+            item_sentense = ""
+            for index,j in enumerate(temp_items):
+                item_sentense += "{}.item_{} ".format(index+1,j)
+                if j == user_id_item["itemID"]:
+                    output_sentense = "item_{}".format(j)
+            input_sentense = tempplate.format(user_id,item_sentense)
+            struct_negetive_temp.append({"input":input_sentense,"output":output_sentense})
+    #构造正样本
+    for user_id, item in positive_data.items():
+        part_items = []
+        if user_id in positive_data:
+            for i in positive_data[user_id]:
+                part_items.append(i["itemID"])
+        temp_items = part_items.copy()
+        for user_id_item in item:
+            temp_items.append(user_id_item["itemID"])
+            if len(temp_items) > 0:
+                random.shuffle(temp_items)
+            item_sentense = ""
+            for j in temp_items:
+                item_sentense += "item_{},".format(j)
+            input_sentense = tempplate.format(user_id, item_sentense)
+            output_sentense = user_id_item
+            struct_positive_temp.append({"input": input_sentense, "output": output_sentense})
+
+    #保存文件
+    json_positive_data = {"train":struct_positive_temp}
+    json_negetive_data = {"train":struct_negetive_temp}
+    posivtive_file = os.path.join(Save_Path,'Positive_TopN.json')
+    negetive_file = os.path.join(Save_Path,'Negetive_TopN.json')
+    # with open(posivtive_file, 'w', encoding='utf-8') as posivtive_f:
+    #     json.dump(json_positive_data, posivtive_f, ensure_ascii=False, indent=4)
+    with open(negetive_file, 'w', encoding='utf-8') as f:
+        json.dump(json_negetive_data, f, ensure_ascii=False, indent=4)
+    return json_positive_data,json_negetive_data
+

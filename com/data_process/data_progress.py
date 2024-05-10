@@ -57,9 +57,11 @@ def main(data_dir:str, task:str, dataset:str, prompt_file:str, con_num:int, batc
             # 使用 json.dump() 函数将字典写入文件
             json.dump(data, f)
 
+    elif task =='topn':
+        Struct_TopN(f'../data/{dataset}/topn_com_data/ratings.csv',rate=4.0,map_path=f'../data/{dataset}/datamaps.json',Save_Path=f'../data/{dataset}/topn_com_data/')
 if __name__ == "__main__":
-    main('../data','exp','sports','../templates.py',2,8,'../data/sports/exp_com_data/data.json',
-         '../data/sports/exp_com_data/train_data.json','../data/sports/exp_com_data/valid_data.json',0.9)
+    main('../data','topn','beauty','../templates.py',2,8,'../data/sports/exp_com_data/data.json',
+         '../data/sports/train_data.json','../data/sports/valid_data.json',0.9,)
 
 
 
