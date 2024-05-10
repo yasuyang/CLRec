@@ -203,6 +203,8 @@ def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
         if user_id in negetive_data:
             for i in positive_data[user_id]:
                 part_items.append(i["itemID"])
+        else:
+            continue
         for user_id_item in item:
             if len(part_items) > 15:
                 random.shuffle(part_items)
