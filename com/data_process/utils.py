@@ -198,9 +198,9 @@ def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
     struct_negetive_temp = []
     tempplate = '''Choose the best item from the candidates to recommend for user_{}? {}'''
     #构造负样本
-    for user_id, item in negetive_data.items():
+    for user_id, item in positive_data.items():
         part_items = []
-        if user_id in positive_data:
+        if user_id in negetive_data:
             for i in positive_data[user_id]:
                 part_items.append(i["itemID"])
         for user_id_item in item:
@@ -248,4 +248,5 @@ def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
     with open(negetive_file, 'w', encoding='utf-8') as f:
         json.dump(json_negetive_data, f, ensure_ascii=False, indent=4)
     return json_positive_data,json_negetive_data
+
 
