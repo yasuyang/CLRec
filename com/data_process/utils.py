@@ -312,11 +312,6 @@ def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
     return json_positive_data,json_negetive_data
 
 
-import json
-from typing import List
-import random
-
-
 def Split_TopN(file_name: str):
     # 从JSON文件中读取数据
     with open(file_name, 'r') as file:
