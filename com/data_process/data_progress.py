@@ -4,7 +4,7 @@ import sys
 import fire
 import random
 from utils import construct_user_sequence_dict,read_line
-from utils import load_prompt_template,choice_con,split_json_file,get_exp_data
+from utils import load_prompt_template,choice_con,split_json_file,get_exp_data,Struct_TopN,Split_TopN
 
 
 def main(data_dir:str, task:str, dataset:str, prompt_file:str, con_num:int, batch_size:int, output_path:str,train_data:str, val_data:str,ratio:float):
@@ -59,8 +59,9 @@ def main(data_dir:str, task:str, dataset:str, prompt_file:str, con_num:int, batc
 
     elif task =='topn':
         Struct_TopN(f'../data/{dataset}/topn_com_data/ratings.csv',rate=4.0,map_path=f'../data/{dataset}/datamaps.json',Save_Path=f'../data/{dataset}/topn_com_data/')
+        Split_TopN(f'../data/{dataset}/topn_com_data/Negetive_TopN.json')
 if __name__ == "__main__":
-    main('../data','topn','beauty','../templates.py',2,8,'../data/sports/exp_com_data/data.json',
+    main('../data','topn','toys','../templates.py',2,8,'../data/sports/exp_com_data/data.json',
          '../data/sports/train_data.json','../data/sports/valid_data.json',0.9,)
 
 

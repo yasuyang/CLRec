@@ -1,11 +1,12 @@
 import os
 import random
 import sys
+sys.path.append('../')
 import templates
 import json
 import csv
-sys.path.append('../')
-
+from typing import List, Dict
+import math
 def read_line(path):
     print(path)
     if not os.path.exists(path):
@@ -137,6 +138,65 @@ def process_pair(current_dic,com_dic):
 
     return data1,data2
 
+def calculate_jaccard_similarity(text1: str, text2: str) -> float:
+    """计算两个文本之间的 Jaccard 相似度。"""
+    set1 = set(text1.split())
+    set2 = set(text2.split())
+    intersection = set1.intersection(set2)
+    union = set1.union(set2)
+    if not union:
+        return 0.0
+    return len(intersection) / len(union)
+
+
+def find_most_similar_explanation(data: List[Dict], target_dict: Dict) -> Dict:
+    """在列表中找到与目标字典的'explanation' Jaccard 相似度最高的字典。"""
+    target_explanation = target_dict["explanation"]
+    most_similar_dict = None
+    highest_similarity = 0.0
+
+    for entry in data:
+        if entry["explanation"] == target_explanation:
+            continue
+        current_similarity = calculate_jaccard_similarity(target_explanation, entry["explanation"])
+        if current_similarity > highest_similarity:
+            highest_similarity = current_similarity
+            most_similar_dict = entry
+
+    return most_similar_dict
+
+
+def calculate_similarity(text1: str, text2: str) -> float:
+    # 分割文本为单词集合
+    set1 = set(text1.split())
+    set2 = set(text2.split())
+
+    # 计算交集的大小
+    intersection = len(set1 & set2)
+
+    if intersection == 0:
+        return 0  # 如果没有交集，相似度为0
+
+    # 计算归一化的对数分母
+    norm = math.log(len(set1)) + math.log(len(set2))
+
+    # 返回相似度公式的结果
+    return intersection / norm
+
+
+def find_most_similar(explanations: List[Dict], target: Dict) -> Dict:
+    target_explanation = target['explanation']
+    most_similar = None
+    highest_similarity = -1
+
+    for explanation in explanations:
+        if explanation['explanation'] != target_explanation:
+            sim = calculate_similarity(explanation['explanation'], target_explanation)
+            if sim > highest_similarity:
+                highest_similarity = sim
+                most_similar = explanation
+
+    return most_similar
 def Csv2Json(csv_file,map_file = None):
     data = {}  # 创建一个空的字典用于存储数据
     with open(csv_file, 'r', newline='', encoding='utf-8') as file:
@@ -250,5 +310,40 @@ def Struct_TopN(data_path,rate = 4.0,map_path = None,Save_Path = "./"):
     with open(negetive_file, 'w', encoding='utf-8') as f:
         json.dump(json_negetive_data, f, ensure_ascii=False, indent=4)
     return json_positive_data,json_negetive_data
+
+
+import json
+from typing import List
+import random
+
+
+def Split_TopN(file_name: str):
+    # 从JSON文件中读取数据
+    with open(file_name, 'r') as file:
+        data = json.load(file)
+        data_list = data['train']  # 获取字典列表
+
+    # 打乱数据顺序
+    random.shuffle(data_list)
+
+    # 计算分割点
+    train_size = int(0.8 * len(data_list))
+    val_size = int(0.1 * len(data_list))
+
+    # 分割数据
+    train_data = data_list[:train_size]
+    val_data = data_list[train_size:train_size + val_size]
+    test_data = data_list[train_size + val_size:]
+
+    # 重新组织数据为一个字典
+    split_dict = {
+        'train': train_data,
+        'val': val_data,
+        'test': test_data
+    }
+
+    # 将分割后的数据写回JSON文件
+    with open(file_name, 'w') as file:
+        json.dump(split_dict, file, indent=4)
 
 

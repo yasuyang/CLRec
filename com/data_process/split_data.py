@@ -1,4 +1,6 @@
 import json
+dataset = 'toys'
+task = 'topn'
 def split_json_into_files(input_filename):
     # 打开并读取输入的JSON文件
     with open(input_filename, 'r') as file:
@@ -13,10 +15,11 @@ def split_json_into_files(input_filename):
     valid_data = dict()
     train_data['data'] = data['train']
     valid_data['data'] = data['val']
-    with open('../data/toys/exp_com_data/train_data.json', 'w') as file:
+    with open(f'../data/{dataset}/{task}_com_data/train_data.json', 'w') as file:
         # 将字典数据转换为JSON格式并写入文件
         json.dump(train_data, file, indent=4)  # indent参数使JSON文件格式化，更易于阅读
-    with open('../data/toys/exp_com_data/valid_data.json', 'w') as file:
+    with open(f'../data/{dataset}/{task}_com_data/valid_data.json', 'w') as file:
             # 将字典数据转换为JSON格式并写入文件
         json.dump(valid_data, file, indent=4)  # indent参数使JSON文件格式化，更易于阅读
-split_json_into_files('../data/toys/exp_com_data/data.json')
+split_json_into_files(f'../data/{dataset}/{task}_com_data/Negetive_TopN.json')
+
